@@ -10,3 +10,6 @@ class Yarn:
         self.weight = weight
         self.blend = blend
         self.quantity = quantity
+
+    def __str__(self):
+        return f"{self.brand} {self.type} {self.color_name}"

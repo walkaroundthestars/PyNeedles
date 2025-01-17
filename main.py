@@ -12,6 +12,9 @@ class Main:
     psg.theme_input_text_color('white')
     psg.theme_input_background_color('#663300')
 
+    def __init__(self):
+        self.yarns = []
+
     def main_window(self):
         layout = [[psg.Text("Welcome to PyNeedles!", font=("Helvetica", 20), expand_x=True, justification="center")],
                 [psg.Button(button_text="Yarn stash", size=(15,3)),
@@ -83,7 +86,7 @@ class Main:
                   [psg.OK(), psg.Cancel()]
                   ]
 
-        window = psg.Window("Add yarn to stash", layout, finalize=True, size=(650, 400))
+        window = psg.Window("Add yarn to stash", layout, finalize=True, size=(650, 600))
 
         while True:
             event, values = window.read()
@@ -91,15 +94,14 @@ class Main:
                 break
 
             yarn = Yarn(brand=values["Brand"],type=values["Type"],color_name=values["ColorName"],blend=values["Blend"],code=values["Code"], length=values["Length"], weight=values["Weight"],quantity=values["Quantity"])
-
+            self.yarns.append(yarn)
             print(f"Added {yarn.quantity} grams of {yarn.brand} {yarn.type} in color {yarn.color_name}")
 
     def change_quantity(self):
-        yarns = ["blue", "yellow", "green", "black", "white"]
-        lst = psg.Combo(values=yarns, key="yarns")
+        lst = psg.Combo(values=self.yarns, key="combo_yarns", enable_events=True)
 
         layout = [[psg.Text("Here you will be able to change quantity of the yarn in stash")], [lst],
-                  [psg.Text("Quantity in stash:"), psg.Input(key="Quantity", readonly=True)],
+                  [psg.Text("Quantity in stash:"), psg.Text(" - ",key="Quantity")],
                   [psg.Text("Set quantity to:"), psg.Input(key="newQuantity", readonly=False)], [psg.OK()]]
 
         window = psg.Window("Change quantity", layout, finalize=True, size=(650, 400))
@@ -108,6 +110,14 @@ class Main:
             event, values = window.read()
             if event == psg.WIN_CLOSED:
                 break
+            choosen = values["combo_yarns"]
+            if event == "combo_yarns":
+                if choosen:
+                    window["Quantity"].update(choosen.quantity)
+            if event == "OK":
+                choosen.quantity = int(values["newQuantity"])
+                window["Quantity"].update(choosen.quantity)
+            print(values)
 
 if __name__ == "__main__":
     app = Main()
