@@ -1,6 +1,6 @@
 import PySimpleGUI as psg
 import re  #dodać sprawdzanie poprawności danych
-import sqlite3  #dodać baze danych
+import sqlite3  #poprawić updatowanie quantity i poprawić wyświetlanie bazy w stash
 from Yarn import Yarn
 
 class Main:
@@ -11,9 +11,12 @@ class Main:
     psg.theme_button_color(('white', '#663300'))
     psg.theme_input_text_color('white')
     psg.theme_input_background_color('#663300')
+    dataBaseFile = r"yarn.db"
 
     def __init__(self):
         self.yarns = []
+        self.create_db()
+        self.get_from_db()
 
     def main_window(self):
         layout = [[psg.Text("Welcome to PyNeedles!", font=("Helvetica", 20), expand_x=True, justification="center")],
@@ -32,10 +35,27 @@ class Main:
                 break
 
     def yarn_stash(self):
-        layout = [[psg.Text("Here you will see your yarn stash")],
+        layout = [[psg.Text("Choose what do you want to do.")],
                   [psg.Button(button_text="See stash", size=(15,3)),
                   psg.Button(button_text="Add yarn", size=(15,3)),
                   psg.Button(button_text="Change quantity", size=(15,3))]]
+
+        window = psg.Window("Yarn stash", layout, finalize=True, size=(650, 400))
+
+        while True:
+            event, values = window.read()
+            if event == "See stash":
+                self.see_stash()
+            if event == "Add yarn":
+                self.add_yarn()
+            if event == "Change quantity":
+                self.change_quantity()
+            if event == psg.WIN_CLOSED:
+                break
+
+    def see_stash(self):
+        layout = [[psg.Text("Here you will see your yarn stash")],
+                  [psg.Listbox(self.yarns)]]
 
         window = psg.Window("Yarn stash", layout, finalize=True, size=(650, 400))
 
@@ -95,6 +115,7 @@ class Main:
 
             yarn = Yarn(brand=values["Brand"],type=values["Type"],color_name=values["ColorName"],blend=values["Blend"],code=values["Code"], length=values["Length"], weight=values["Weight"],quantity=values["Quantity"])
             self.yarns.append(yarn)
+            self.add_to_db(yarn)
             print(f"Added {yarn.quantity} grams of {yarn.brand} {yarn.type} in color {yarn.color_name}")
 
     def change_quantity(self):
@@ -117,7 +138,53 @@ class Main:
             if event == "OK":
                 choosen.quantity = int(values["newQuantity"])
                 window["Quantity"].update(choosen.quantity)
+                self.update_quantity_in_db(choosen, int(values["newQuantity"]))
             print(values)
+
+    def create_db(self):
+        connection = sqlite3.connect(Main.dataBaseFile)
+        cursor =  connection.cursor()
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS yarn (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        brand TEXT, type TEXT, color_name TEXT, code TEXT, length INTEGER, weight INTEGER, blend TEXT, quantity INTEGER)
+        ''')
+
+        connection.commit()
+        connection.close()
+
+    def add_to_db(self, yarn:Yarn):
+        connection = sqlite3.connect(Main.dataBaseFile)
+        cursor = connection.cursor()
+
+        cursor.execute('''
+                INSERT INTO yarn (brand, type, color_name, code, length, weight, blend, quantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''',(yarn.brand, yarn.type, yarn.color_name, yarn.code, yarn.length, yarn.weight, yarn.blend, yarn.quantity))
+
+        connection.commit()
+        connection.close()
+
+    def get_from_db(self):
+        connection = sqlite3.connect(Main.dataBaseFile)
+        cursor = connection.cursor()
+
+        cursor.execute('''SELECT * FROM yarn''')
+        connection.commit()
+
+        data = cursor.fetchall()
+        for row in data:
+            self.yarns.append(Yarn(row[1],row[2],row[3],row[4],row[5],row[6],row[7],row[8]))
+        connection.close()
+
+    def update_quantity_in_db(self, yarn:Yarn, newQuantity:int):
+        connection = sqlite3.connect(Main.dataBaseFile)
+        cursor = connection.cursor()
+
+        cursor.execute(f'''UPDATE yarn SET quantity=? WHERE code=? AND color_name=?''',(newQuantity,yarn.code,yarn.color_name))
+        connection.commit()
+
+        connection.close()
 
 if __name__ == "__main__":
     app = Main()
