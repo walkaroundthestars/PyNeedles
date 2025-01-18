@@ -65,17 +65,15 @@ class Main:
         table = psg.Table(headings=headings, header_background_color=psg.theme_input_background_color(), header_text_color="white",
                           values=yarn_values, size=(100,75), expand_x=True, expand_y=True, justification="center")
 
-        layout = [[psg.Text("Your yarn stash:", font=("Bold")), psg.Push(), psg.Cancel()], [table]]
+        layout = [[psg.Text("Your yarn stash:", font=("Bold")), psg.Push(), psg.Button(button_text="Your statistics", key="statistics"), psg.Cancel()], [table]]
 
         window = psg.Window("Yarn stash", layout, finalize=True, size=(1000, 400), resizable=True)
         window.TKroot.minsize(650, 400)
 
         while True:
             event, values = window.read()
-            if event == "Add yarn":
-                self.add_yarn()
-            if event == "Change quantity":
-                self.change_quantity()
+            if event == "statistics":
+                self.statistics()
             if event in (psg.WIN_CLOSED, "Cancel"):
                 break
         window.close()
@@ -240,6 +238,18 @@ class Main:
         connection.commit()
 
         connection.close()
+
+    def statistics(self):
+        layout = [[psg.Push(), psg.Cancel()],
+                  [psg.Text("Here you will see your statistics")]]
+
+        window = psg.Window("Statistics", layout, finalize=True, size=(650, 400))
+
+        while True:
+            event, values = window.read()
+            if event in (psg.WIN_CLOSED, "Cancel"):
+                break
+        window.close()
 
 if __name__ == "__main__":
     app = Main()
