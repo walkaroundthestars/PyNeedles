@@ -1,9 +1,6 @@
-import PySimpleGUI as psg  #poprawić blokowanie dodawania kiedy pola są puste
-import re  #dodać sprawdzanie poprawności danych
-import sqlite3  #poprawić wyświetlanie bazy w stash
-
-from PySimpleGUI import theme_text_color
-
+import PySimpleGUI as psg
+import matplotlib.pyplot as plt  #dodać statystyki
+import sqlite3
 from Yarn import Yarn
 
 class Main:
@@ -68,7 +65,7 @@ class Main:
         table = psg.Table(headings=headings, header_background_color=psg.theme_input_background_color(), header_text_color="white",
                           values=yarn_values, size=(100,75), expand_x=True, expand_y=True, justification="center")
 
-        layout = [[psg.Cancel(), psg.Text("Your yarn stash:", font=("Bold"))], [table]]
+        layout = [[psg.Text("Your yarn stash:", font=("Bold")), psg.Push(), psg.Cancel()], [table]]
 
         window = psg.Window("Yarn stash", layout, finalize=True, size=(1000, 400), resizable=True)
         window.TKroot.minsize(650, 400)
@@ -84,7 +81,7 @@ class Main:
         window.close()
 
     def count_stitches(self):
-        layout = [[psg.VPush()],[psg.Text("Count how many stitches you need to cast on.", font=("Helvetica", 15), expand_x=True, justification="center")],
+        layout = [[psg.Push(), psg.Cancel()],[psg.VPush()],[psg.Text("Count how many stitches you need to cast on.", font=("Helvetica", 15), expand_x=True, justification="center")],
                   [psg.Push(), psg.Text("Number of stitches per 10cm of base yarn:"), psg.Input(key="baseGauge"), psg.Push()],
                   [psg.Push(), psg.Text("Number of stitches per 10cm of your yarn:"), psg.Input(key="userGauge"), psg.Push()],
                   [psg.Push(), psg.Button(button_text="Calculate", size=(15,2)), psg.Push()],
@@ -96,9 +93,12 @@ class Main:
         while True:
             event, values = window.read()
             if event == "Calculate":
-                result = round((int(values["baseGauge"]) * int(values["userGauge"]))/10)
-                window["result"].update(result)
-            if event == psg.WIN_CLOSED:
+                if values["baseGauge"].isdigit() and values["userGauge"].isdigit():
+                    result = round((int(values["baseGauge"]) * int(values["userGauge"]))/10)
+                    window["result"].update(result)
+                else:
+                    psg.popup_error("Fill all fields correctly!")
+            if event in (psg.WIN_CLOSED, "Cancel"):
                 break
 
         window.close()
@@ -130,11 +130,10 @@ class Main:
 
         while True:
             event, values = window.read()
-            print(event)
             if event in (psg.WIN_CLOSED, "Cancel"):
                 break
             if event == "Add":
-                try:
+                if values["Brand"] and values["Type"] and values["ColorName"] and values["Blend"] and values["Code"] and values["Length"].isdigit() and values["Weight"].isdigit() and values["Quantity"].isdigit():
                     yarn = Yarn(brand=values["Brand"],type=values["Type"],color_name=values["ColorName"],blend=values["Blend"],code=values["Code"], length=values["Length"], weight=values["Weight"],quantity=values["Quantity"])
                     self.yarns.append(yarn)
                     self.add_to_db(yarn)
@@ -147,8 +146,8 @@ class Main:
                     window["Weight"].update("")
                     window["Blend"].update("")
                     window["Quantity"].update("")
-                except ValueError as ve:
-                    psg.popup_error("Fill all fields!")
+                else:
+                    psg.popup_error("Fill all fields correctly!")
 
         window.close()
 
@@ -157,7 +156,7 @@ class Main:
         for yarn in self.yarns:
             basic_yarn_data.append([yarn.brand, yarn.type, yarn.color_name, yarn.code])
 
-        lst = psg.Combo(values=basic_yarn_data, key="combo_yarns", enable_events=True)
+        lst = psg.Combo(values=basic_yarn_data, key="combo_yarns", enable_events=True, readonly=True)
 
         layout = [[psg.Push(),psg.Cancel()],[psg.VPush()],[psg.Text("Change quantity of the yarn in your stash", font=("Helvetica", 15), expand_x=True, justification="center")],
                   [psg.Push(), lst, psg.Push()],
@@ -181,9 +180,12 @@ class Main:
                 if choosen:
                     window["Quantity"].update(selected_yarn.quantity)
             if event == "Change":
-                selected_yarn.quantity = int(values["newQuantity"])
-                window["Quantity"].update(selected_yarn.quantity)
-                self.update_quantity_in_db(selected_yarn, int(values["newQuantity"]))
+                if values["combo_yarns"] and values["newQuantity"].isdigit():
+                    selected_yarn.quantity = int(values["newQuantity"])
+                    window["Quantity"].update(selected_yarn.quantity)
+                    self.update_quantity_in_db(selected_yarn, int(values["newQuantity"]))
+                else:
+                    psg.popup_error("Fill all fields correctly!")
         window.close()
 
     def create_db(self):
