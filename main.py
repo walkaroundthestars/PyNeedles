@@ -1,4 +1,4 @@
-import PySimpleGUI as psg  #poprawić blokowanie dodawania kiedu pola są puste
+import PySimpleGUI as psg  #poprawić blokowanie dodawania kiedy pola są puste
 import re  #dodać sprawdzanie poprawności danych
 import sqlite3  #poprawić wyświetlanie bazy w stash
 
@@ -63,11 +63,13 @@ class Main:
         yarn_values = []
         for yarn in self.yarns:
             yarn_values.append(yarn.get_values())
-        table = psg.Table(headings=headings, values=yarn_values, size=(100,75), expand_x=True, expand_y=True, justification="center")
+        table = psg.Table(headings=headings, header_background_color=psg.theme_input_background_color(), header_text_color="white",
+                          values=yarn_values, size=(100,75), expand_x=True, expand_y=True, justification="center")
 
-        layout = [[psg.Text("Here you will see your yarn stash"), psg.Cancel()], [table]]
+        layout = [[psg.Text("Your yarn stash:", font=("Bold")), psg.Cancel()], [table]]
 
-        window = psg.Window("Yarn stash", layout, finalize=True, size=(950, 400), resizable=True)
+        window = psg.Window("Yarn stash", layout, finalize=True, size=(1000, 400), resizable=True)
+        window.TKroot.minsize(650, 400)
 
         while True:
             event, values = window.read()
@@ -120,6 +122,7 @@ class Main:
                   ]
 
         window = psg.Window("Add yarn to stash", layout, finalize=True, size=(650, 600), resizable=True)
+        window.TKroot.minsize(650, 400)
 
         while True:
             event, values = window.read()
