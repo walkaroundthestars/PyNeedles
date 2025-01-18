@@ -1,7 +1,7 @@
 
 
 class Yarn:
-    def __init__(self, brand:str, type:str, color_name:str, blend:str, code:str, length:int, weight:int, quantity:int):
+    def __init__(self, brand:str, type:str, color_name:str, code:str, length:int, weight:int, blend:str, quantity:int):
         self.brand = brand
         self.type = type
         self.color_name = color_name
@@ -12,4 +12,4 @@ class Yarn:
         self.quantity = quantity
 
     def __str__(self):
-        return f"{self.brand} {self.type} {self.color_name}"
+        return f"{self.brand} {self.type} {self.color_name} {self.code} {self.blend} {self.length} {self.weight} {self.quantity}"

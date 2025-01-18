@@ -1,6 +1,6 @@
 import PySimpleGUI as psg
 import re  #dodać sprawdzanie poprawności danych
-import sqlite3  #poprawić updatowanie quantity i poprawić wyświetlanie bazy w stash
+import sqlite3  #poprawić wyświetlanie bazy w stash
 from Yarn import Yarn
 
 class Main:
@@ -54,8 +54,8 @@ class Main:
                 break
 
     def see_stash(self):
-        layout = [[psg.Text("Here you will see your yarn stash")],
-                  [psg.Listbox(self.yarns)]]
+        layout = [[psg.Text("Here you will see your yarn stash"), psg.Cancel()],
+                  [psg.Listbox(self.yarns, size=(100,75))]]
 
         window = psg.Window("Yarn stash", layout, finalize=True, size=(650, 400))
 
@@ -180,7 +180,7 @@ class Main:
     def update_quantity_in_db(self, yarn:Yarn, newQuantity:int):
         connection = sqlite3.connect(Main.dataBaseFile)
         cursor = connection.cursor()
-
+        print(yarn.code, yarn.color_name)
         cursor.execute(f'''UPDATE yarn SET quantity=? WHERE code=? AND color_name=?''',(newQuantity,yarn.code,yarn.color_name))
         connection.commit()
 
