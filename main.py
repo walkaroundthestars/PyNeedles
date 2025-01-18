@@ -23,9 +23,9 @@ class Main:
         self.get_from_db()
 
     def main_window(self):
-        layout = [[psg.Text("Welcome to PyNeedles!", font=("Helvetica", 20), expand_x=True, justification="center")],
-                [psg.Button(button_text="Yarn stash", size=(15,3)),
-                psg.Button(button_text="Count stitches", size=(15,3))]]
+        layout = [[psg.VPush()],[psg.Text("Welcome to PyNeedles!", font=("Helvetica", 20), expand_x=True, justification="center")],
+                [psg.Push(), psg.Button(button_text="Yarn stash", size=(15,3)),
+                psg.Button(button_text="Count stitches", size=(15,3)), psg.Push()], [psg.VPush()]]
 
         window = psg.Window("Welcome!", layout, finalize=True, size=(650, 400))
 
@@ -39,10 +39,10 @@ class Main:
                 break
 
     def yarn_stash(self):
-        layout = [[psg.Text("Choose what do you want to do.")],
-                  [psg.Button(button_text="See stash", size=(15,3)),
+        layout = [[psg.Push(), psg.Cancel()],[psg.VPush()],[psg.Text("Choose what do you want to do.", font=("Helvetica", 20), expand_x=True, justification="center")],
+                  [psg.Push(), psg.Button(button_text="See stash", size=(15,3)),
                   psg.Button(button_text="Add yarn", size=(15,3)),
-                  psg.Button(button_text="Change quantity", size=(15,3))]]
+                  psg.Button(button_text="Change quantity", size=(15,3)), psg.Push()], [psg.VPush()]]
 
         window = psg.Window("Yarn stash", layout, finalize=True, size=(650, 400))
 
@@ -54,11 +54,13 @@ class Main:
                 self.add_yarn()
             if event == "Change quantity":
                 self.change_quantity()
-            if event == psg.WIN_CLOSED:
+            if event in (psg.WIN_CLOSED, "Cancel"):
                 break
 
+        window.close()
+
     def see_stash(self):
-        headings = ["Brand", "Type", "Color name", "Code","Blend", "Length", "Weight", "Quantity"]
+        headings = ["Brand", "Type", "Color name", "Code", "Blend", "Length", "Weight", "Quantity"]
 
         yarn_values = []
         for yarn in self.yarns:
@@ -66,7 +68,7 @@ class Main:
         table = psg.Table(headings=headings, header_background_color=psg.theme_input_background_color(), header_text_color="white",
                           values=yarn_values, size=(100,75), expand_x=True, expand_y=True, justification="center")
 
-        layout = [[psg.Text("Your yarn stash:", font=("Bold")), psg.Cancel()], [table]]
+        layout = [[psg.Cancel(), psg.Text("Your yarn stash:", font=("Bold"))], [table]]
 
         window = psg.Window("Yarn stash", layout, finalize=True, size=(1000, 400), resizable=True)
         window.TKroot.minsize(650, 400)
@@ -82,10 +84,11 @@ class Main:
         window.close()
 
     def count_stitches(self):
-        layout = [[psg.Text("Here you will see counter for stitches")],
-                  [psg.Text("Number of stitches per 10cm of base yarn:"), psg.Input(key="baseGauge")],
-                  [psg.Text("Number of stitches per 10cm of your yarn:"), psg.Input(key="userGauge")],
-                  [psg.Button(button_text="Calculate", size=(15,2)), psg.Text("Result", key="result")]]
+        layout = [[psg.VPush()],[psg.Text("Count how many stitches you need to cast on.", font=("Helvetica", 15), expand_x=True, justification="center")],
+                  [psg.Push(), psg.Text("Number of stitches per 10cm of base yarn:"), psg.Input(key="baseGauge"), psg.Push()],
+                  [psg.Push(), psg.Text("Number of stitches per 10cm of your yarn:"), psg.Input(key="userGauge"), psg.Push()],
+                  [psg.Push(), psg.Button(button_text="Calculate", size=(15,2)), psg.Push()],
+                  [psg.Push(), psg.Text("You need to cast on "), psg.Text("...", key="result"), psg.Text("stitches."), psg.Push()], [psg.VPush()]]
 
 
         window = psg.Window("Count stitches", layout, finalize=True, size=(650, 400))
@@ -93,7 +96,7 @@ class Main:
         while True:
             event, values = window.read()
             if event == "Calculate":
-                result = (int(values["baseGauge"]) * int(values["userGauge"]))/10
+                result = round((int(values["baseGauge"]) * int(values["userGauge"]))/10)
                 window["result"].update(result)
             if event == psg.WIN_CLOSED:
                 break
@@ -101,7 +104,8 @@ class Main:
         window.close()
 
     def add_yarn(self):
-        layout = [[psg.Text("Here will be a form for adding yarn")],
+        layout = [[psg.Push(),psg.Cancel(key="Cancel")],[psg.VPush()],
+                  [psg.Text("Add new yarn to your stash", font=("Helvetica", 15), expand_x=True, justification="center")],
                   [psg.Text("Brand:")],
                   [psg.Input(key="Brand")],
                   [psg.Text("Type:")],
@@ -118,11 +122,11 @@ class Main:
                   [psg.Input(key="Weight")],
                   [psg.Text("Quantity in grams:")],
                   [psg.Input(key="Quantity")],
-                  [psg.Button(button_text="Add"), psg.Cancel(key="Cancel")],
-                  ]
+                  [psg.Button(button_text="Add")],
+                  [psg.VPush()]]
 
-        window = psg.Window("Add yarn to stash", layout, finalize=True, size=(650, 600), resizable=True)
-        window.TKroot.minsize(650, 400)
+        window = psg.Window("Add yarn to stash", layout, finalize=True, size=(450, 600), resizable=True)
+        window.TKroot.minsize(450, 400)
 
         while True:
             event, values = window.read()
@@ -149,26 +153,37 @@ class Main:
         window.close()
 
     def change_quantity(self):
-        lst = psg.Combo(values=self.yarns, key="combo_yarns", enable_events=True)
+        basic_yarn_data = []
+        for yarn in self.yarns:
+            basic_yarn_data.append([yarn.brand, yarn.type, yarn.color_name, yarn.code])
 
-        layout = [[psg.Text("Here you will be able to change quantity of the yarn in stash")], [lst],
-                  [psg.Text("Quantity in stash:"), psg.Text(" - ",key="Quantity")],
-                  [psg.Text("Set quantity to:"), psg.Input(key="newQuantity", readonly=False)], [psg.OK()]]
+        lst = psg.Combo(values=basic_yarn_data, key="combo_yarns", enable_events=True)
+
+        layout = [[psg.Push(),psg.Cancel()],[psg.VPush()],[psg.Text("Change quantity of the yarn in your stash", font=("Helvetica", 15), expand_x=True, justification="center")],
+                  [psg.Push(), lst, psg.Push()],
+                  [psg.Push(), psg.Text("Quantity in stash:"), psg.Text(" - ",key="Quantity"), psg.Push()],
+                  [psg.Push(), psg.Text("Set quantity to:"), psg.Input(key="newQuantity", readonly=False), psg.Push()],
+                  [psg.Push(), psg.Button(button_text="Change"), psg.Push()], [psg.VPush()]]
 
         window = psg.Window("Change quantity", layout, finalize=True, size=(650, 400))
 
         while True:
             event, values = window.read()
-            if event == psg.WIN_CLOSED:
+            if event in (psg.WIN_CLOSED, "Cancel"):
                 break
             choosen = values["combo_yarns"]
+            selected_yarn = None
+            if choosen:
+                for yarn in self.yarns:
+                    if choosen[0] == yarn.brand and choosen[1] == yarn.type and choosen[2] == yarn.color_name and choosen[3] == yarn.code:
+                        selected_yarn = yarn
             if event == "combo_yarns":
                 if choosen:
-                    window["Quantity"].update(choosen.quantity)
-            if event == "OK":
-                choosen.quantity = int(values["newQuantity"])
-                window["Quantity"].update(choosen.quantity)
-                self.update_quantity_in_db(choosen, int(values["newQuantity"]))
+                    window["Quantity"].update(selected_yarn.quantity)
+            if event == "Change":
+                selected_yarn.quantity = int(values["newQuantity"])
+                window["Quantity"].update(selected_yarn.quantity)
+                self.update_quantity_in_db(selected_yarn, int(values["newQuantity"]))
         window.close()
 
     def create_db(self):
@@ -210,7 +225,6 @@ class Main:
     def update_quantity_in_db(self, yarn:Yarn, newQuantity:int):
         connection = sqlite3.connect(Main.dataBaseFile)
         cursor = connection.cursor()
-        print(yarn.code, yarn.color_name)
         cursor.execute(f'''UPDATE yarn SET quantity=? WHERE code=? AND color_name=?''',(newQuantity,yarn.code,yarn.color_name))
         connection.commit()
 
