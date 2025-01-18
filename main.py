@@ -1,6 +1,9 @@
-import PySimpleGUI as psg
+import PySimpleGUI as psg  #poprawić blokowanie dodawania kiedu pola są puste
 import re  #dodać sprawdzanie poprawności danych
 import sqlite3  #poprawić wyświetlanie bazy w stash
+
+from PySimpleGUI import theme_text_color
+
 from Yarn import Yarn
 
 class Main:
@@ -11,6 +14,7 @@ class Main:
     psg.theme_button_color(('white', '#663300'))
     psg.theme_input_text_color('white')
     psg.theme_input_background_color('#663300')
+    psg.set_options(font=("Helvetica", 12))
     dataBaseFile = r"yarn.db"
 
     def __init__(self):
@@ -54,10 +58,16 @@ class Main:
                 break
 
     def see_stash(self):
-        layout = [[psg.Text("Here you will see your yarn stash"), psg.Cancel()],
-                  [psg.Listbox(self.yarns, size=(100,75))]]
+        headings = ["Brand", "Type", "Color name", "Code","Blend", "Length", "Weight", "Quantity"]
 
-        window = psg.Window("Yarn stash", layout, finalize=True, size=(650, 400))
+        yarn_values = []
+        for yarn in self.yarns:
+            yarn_values.append(yarn.get_values())
+        table = psg.Table(headings=headings, values=yarn_values, size=(100,75), expand_x=True, expand_y=True, justification="center")
+
+        layout = [[psg.Text("Here you will see your yarn stash"), psg.Cancel()], [table]]
+
+        window = psg.Window("Yarn stash", layout, finalize=True, size=(950, 400), resizable=True)
 
         while True:
             event, values = window.read()
@@ -65,8 +75,9 @@ class Main:
                 self.add_yarn()
             if event == "Change quantity":
                 self.change_quantity()
-            if event == psg.WIN_CLOSED:
+            if event in (psg.WIN_CLOSED, "Cancel"):
                 break
+        window.close()
 
     def count_stitches(self):
         layout = [[psg.Text("Here you will see counter for stitches")],
@@ -84,6 +95,8 @@ class Main:
                 window["result"].update(result)
             if event == psg.WIN_CLOSED:
                 break
+
+        window.close()
 
     def add_yarn(self):
         layout = [[psg.Text("Here will be a form for adding yarn")],
@@ -103,20 +116,34 @@ class Main:
                   [psg.Input(key="Weight")],
                   [psg.Text("Quantity in grams:")],
                   [psg.Input(key="Quantity")],
-                  [psg.OK(), psg.Cancel()]
+                  [psg.Button(button_text="Add"), psg.Cancel(key="Cancel")],
                   ]
 
-        window = psg.Window("Add yarn to stash", layout, finalize=True, size=(650, 600))
+        window = psg.Window("Add yarn to stash", layout, finalize=True, size=(650, 600), resizable=True)
 
         while True:
             event, values = window.read()
-            if event == psg.WIN_CLOSED or event == "Cancel":
+            print(event)
+            if event in (psg.WIN_CLOSED, "Cancel"):
                 break
+            if event == "Add":
+                try:
+                    yarn = Yarn(brand=values["Brand"],type=values["Type"],color_name=values["ColorName"],blend=values["Blend"],code=values["Code"], length=values["Length"], weight=values["Weight"],quantity=values["Quantity"])
+                    self.yarns.append(yarn)
+                    self.add_to_db(yarn)
+                    psg.Popup("Yarn added to stash")
+                    window["Brand"].update("")
+                    window["Type"].update("")
+                    window["ColorName"].update("")
+                    window["Code"].update("")
+                    window["Length"].update("")
+                    window["Weight"].update("")
+                    window["Blend"].update("")
+                    window["Quantity"].update("")
+                except ValueError as ve:
+                    psg.popup_error("Fill all fields!")
 
-            yarn = Yarn(brand=values["Brand"],type=values["Type"],color_name=values["ColorName"],blend=values["Blend"],code=values["Code"], length=values["Length"], weight=values["Weight"],quantity=values["Quantity"])
-            self.yarns.append(yarn)
-            self.add_to_db(yarn)
-            print(f"Added {yarn.quantity} grams of {yarn.brand} {yarn.type} in color {yarn.color_name}")
+        window.close()
 
     def change_quantity(self):
         lst = psg.Combo(values=self.yarns, key="combo_yarns", enable_events=True)
@@ -139,7 +166,7 @@ class Main:
                 choosen.quantity = int(values["newQuantity"])
                 window["Quantity"].update(choosen.quantity)
                 self.update_quantity_in_db(choosen, int(values["newQuantity"]))
-            print(values)
+        window.close()
 
     def create_db(self):
         connection = sqlite3.connect(Main.dataBaseFile)

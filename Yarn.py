@@ -13,3 +13,6 @@ class Yarn:
 
     def __str__(self):
         return f"{self.brand} {self.type} {self.color_name} {self.code} {self.blend} {self.length} {self.weight} {self.quantity}"
+
+    def get_values(self):
+        return [self.brand, self.type, self.color_name, self.code, self.blend, self.length, self.weight, self.quantity]
