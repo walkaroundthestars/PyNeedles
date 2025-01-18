@@ -104,12 +104,21 @@ class Main:
         window.close()
 
     def add_yarn(self):
+        brands = []
+        for yarn in self.yarns:
+            if yarn.brand not in brands:
+                brands.append(yarn.brand)
+        types = []
+        for yarn in self.yarns:
+            if yarn.type not in types:
+                types.append(yarn.type)
+
         layout = [[psg.Push(),psg.Cancel(key="Cancel")],[psg.VPush()],
                   [psg.Text("Add new yarn to your stash", font=("Helvetica", 15), expand_x=True, justification="center")],
                   [psg.Text("Brand:")],
-                  [psg.Input(key="Brand")],
+                  [psg.Combo(key="Brand", values=brands)],
                   [psg.Text("Type:")],
-                  [psg.Input(key="Type")],
+                  [psg.Combo(key="Type", values=types)],
                   [psg.Text("ColorName:")],
                   [psg.Input(key="ColorName")],
                   [psg.Text("Blend:")],
