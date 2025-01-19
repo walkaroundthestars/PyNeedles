@@ -1,6 +1,7 @@
 import PySimpleGUI as psg
 import matplotlib.pyplot as plt  #dodać statystyki
 import sqlite3
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from Yarn import Yarn
 
 class Main:
@@ -240,16 +241,73 @@ class Main:
         connection.close()
 
     def statistics(self):
-        layout = [[psg.Push(), psg.Cancel()],
-                  [psg.Text("Here you will see your statistics")]]
+        grams = 0
+        for yarn in self.yarns:
+            grams += yarn.quantity
+
+        meters = 0
+        for yarn in self.yarns:
+            if yarn.quantity != 0:
+                meters += yarn.length * (yarn.quantity/yarn.weight)
+
+        layout = [[psg.Push(), psg.Cancel()], [psg.VPush()],
+                  [psg.Text("Your statistics", font=("Helvetica", 18), expand_x=True, justification="center")],
+                  [psg.Push(), psg.Text(f"You have {grams} grams and {round(meters)} meters in stash"), psg.Push()],
+                  [psg.Text("Yarns brands:"), psg.Push(), psg.Text("Thicknesses:")],
+                  [psg.Canvas(key="canvasBrands"), psg.Canvas(key="canvasThickness")],
+                  [psg.VPush()]]
 
         window = psg.Window("Statistics", layout, finalize=True, size=(650, 400))
+
+        fig = self.create_brands_plot()
+        canvas_elem = window["canvasBrands"]
+        canvas = canvas_elem.TKCanvas
+        figure_canvas_agg = self.draw_plot(canvas, fig)
+
+        fig2 = self.create_thickness_plot()
+        canvas_elem2 = window["canvasThickness"]
+        canvas2 = canvas_elem2.TKCanvas
+        figure_canvas_agg = self.draw_plot(canvas2, fig2)
 
         while True:
             event, values = window.read()
             if event in (psg.WIN_CLOSED, "Cancel"):
                 break
         window.close()
+
+    def create_brands_plot(self):
+        fig, ax = plt.subplots(figsize=(3, 2))
+        brands = {}
+        for yarn in self.yarns:
+            if yarn.brand not in brands:
+                brands[yarn.brand] = 1
+            else:
+                brands[yarn.brand] += 1
+
+        ax.bar(brands.keys(), brands.values(), color='#663300')
+        ax.set_xlabel("Brand")
+        ax.set_ylabel("Quantity")
+        return fig
+
+    def draw_plot(self, canvas, figure):
+        figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
+        figure_canvas_agg.draw()
+        figure_canvas_agg.get_tk_widget().pack(side="top", fill="both", expand=1)
+        return figure_canvas_agg
+
+    def create_thickness_plot(self):
+        fig, ax = plt.subplots(figsize=(3, 2))
+        thickness = {}
+        for yarn in self.yarns:
+            if yarn.quantity != 0 and (yarn.length/yarn.weight) not in thickness:
+                thickness[yarn.length/yarn.weight] = 1
+            elif yarn.quantity != 0 and (yarn.length/yarn.weight) in thickness:
+                thickness[yarn.length/yarn.weight] += 1
+
+        colors = ["#663300", "#a96648", "#854e33", "#6d3918", "#58300a", "#783f04", "#7c3e04", "#58300d", "#41280f"]
+        ax.pie(thickness.values(), labels=thickness.keys(), colors=colors, startangle=140, autopct='%1.1f%%')
+        ax.legend(loc="lower left", bbox_to_anchor=(-0.5, 0), title="Thicknesses")
+        return fig
 
 if __name__ == "__main__":
     app = Main()
