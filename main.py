@@ -142,7 +142,7 @@ class Main:
                 break
             if event == "Add":
                 if values["Brand"] and values["Type"] and values["ColorName"] and values["Blend"] and values["Code"] and values["Length"].isdigit() and values["Weight"].isdigit() and values["Quantity"].isdigit():
-                    yarn = Yarn(brand=values["Brand"],type=values["Type"],color_name=values["ColorName"],blend=values["Blend"],code=values["Code"], length=values["Length"], weight=values["Weight"],quantity=values["Quantity"])
+                    yarn = Yarn(brand=values["Brand"],type=values["Type"],color_name=values["ColorName"],blend=values["Blend"],code=values["Code"], length=int(values["Length"]), weight=int(values["Weight"]),quantity=int(values["Quantity"]))
                     self.yarns.append(yarn)
                     self.add_to_db(yarn)
                     psg.Popup("Yarn added to stash")
@@ -243,7 +243,7 @@ class Main:
     def statistics(self):
         grams = 0
         for yarn in self.yarns:
-            grams += yarn.quantity
+            grams += int(yarn.quantity)
 
         meters = 0
         for yarn in self.yarns:
@@ -252,7 +252,7 @@ class Main:
 
         layout = [[psg.Push(), psg.Cancel()], [psg.VPush()],
                   [psg.Text("Your statistics", font=("Helvetica", 18), expand_x=True, justification="center")],
-                  [psg.Push(), psg.Text(f"You have {grams} grams and {round(meters)} meters in stash"), psg.Push()],
+                  [psg.Push(), psg.Text(f"You have {grams} grams and {round(meters)} meters in stash."), psg.Push()],
                   [psg.Text("Yarns brands:"), psg.Push(), psg.Text("Thicknesses:")],
                   [psg.Canvas(key="canvasBrands"), psg.Canvas(key="canvasThickness")],
                   [psg.VPush()]]
